@@ -1,4 +1,3 @@
-#from PIL import Image
 from Tkinter import *
 
 
@@ -10,6 +9,14 @@ def keyPressed(event): pass
 
 def init():
 	splashScreen()
+	canvas.data.eH_1 = Entry(canvas.data.root, width = 30)
+	canvas.data.eH_2 = Entry(canvas.data.root, width = 30)
+	canvas.data.bH_1 = Button(canvas.data.root, text = "GO", command = timeToGo)
+
+def timeToGo():
+	canvas.data.eventName = canvas.data.eH_1.get()
+	canvas.data.eventType = canvas.data.eH_2.get()
+	print canvas.data.eventName, canvas.data.eventType
 
 def splashScreen():
 	canvasWidth = canvas.data.canvasWidth
@@ -28,10 +35,9 @@ def redrawAll():
 	canvasHeight = canvas.data.canvasHeight
 	canvas.create_rectangle(0, 0, canvasWidth, canvasHeight, fill = "grey")
 	homeIcon = PhotoImage(file="HomeIcon.gif")
-	canvas.data.e1 = Entry(canvas.data.root, width = 30)
-	canvas.data.e2 = Entry(canvas.data.root, width = 30)
-	canvas.data.e1.place(x = 150, y = 180)
-	canvas.data.e2.place(x = 150, y = 330)
+	canvas.data.eH_1.place(x = 150, y = 180)
+	canvas.data.eH_2.place(x = 150, y = 330)
+	canvas.data.bH_1.place(x = 420, y = 330)
 	canvas.create_image(500, 20 , image = homeIcon, anchor = NW)
 	canvas.data.t = canvas.create_text(canvasWidth/2, 150, fill = "black",
 	text = "Name your event.", font = "Helvetica 24 bold")
@@ -39,8 +45,8 @@ def redrawAll():
 	text = "What event do you want to plan?", font = "Helvetica 24 bold")
 	canvas.create_text(canvasWidth/2, 50, fill = "black", 
 	text = "HOME", font = "Helvetica 36 bold underline")
-
-
+	canvas.data.eH_1.insert(0, "Plan A")
+	canvas.data.eH_2.insert(0, "Party")
 
 
 def run():
