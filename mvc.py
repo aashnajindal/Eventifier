@@ -1,16 +1,30 @@
 from Tkinter import *
+from yelp import *
+
+class Event(object):
+	def __init__(self, name = "", category = "", venue = "", 
+	date = "", startTime = "", endTime = ""):
+		self.name = name
+		self.type = category
+		self.venue = venue
+		self.date = date
+		self.startTime = startTime
+		self.endTime = endTime
+
+	def getTerm(self):
+		return self.type + " venues"
 
 def init():
 	splashScreen()
 	canvas.data.venueFlag = False
 	canvas.data.dateTimeFlag = False
 	canvas.data.overviewFlag = False
-	canvas.data.homeIcon = PhotoImage(file="HomeIcon.gif")
+	canvas.data.homeIcon= PhotoImage(file="HomeIcon.gif")
 	canvas.data.eH_1 = Entry(canvas.data.root, width = 30)
 	canvas.data.eH_2 = Entry(canvas.data.root, width = 30)
 	canvas.data.bH_1 = Button(canvas.data.root,text = "Go",command = timeToGo1)
 	canvas.data.bH_2 = Button(canvas.data.root, 
-	image = canvas.data.homeIcon, command = homeScreen)
+	image = canvas.data.homeIcon, bg = "#fef6e4", bd = 2, command = homeScreen)
 	canvas.data.eV_1 = Entry(canvas.data.root, width = 30)
 	canvas.data.eV_2 = Entry(canvas.data.root, width = 30)
 	canvas.data.bV_1 = Button(canvas.data.root, text = "Go", 
@@ -33,14 +47,22 @@ def init():
 	canvas.data.bV_2, canvas.data.eD_1, canvas.data.eD_2, canvas.data.eD_3,
 	canvas.data.bD_1]
 
-def venueSearch(): pass
+def venueSearch():
+	options.term = canvas.data.event.getTerm()
+	options.location = canvas.data.eV_2.get()
+	url_params['term'] = options.term
+	url_params["location"] = options.location
+	print options.term, options.location
+	response = request(options.host, '/v2/search', url_params, options.consumer_key, options.consumer_secret, options.token, options.token_secret)
+	for el in response['businesses']:
+		print "%s %s" % (el['name'], el['location']['postal_code'])
 
 def dateTimeScreen():
 	deleteAll()
 	canvasWidth = canvas.data.canvasWidth
 	canvasHeight = canvas.data.canvasHeight
 	canvas.create_rectangle(3, 3, canvasWidth, canvasHeight, fill = "#fef6e4")
-	canvas.create_text(canvasWidth/2,30, text = canvas.data.eventName, 
+	canvas.create_text(canvasWidth/2,30, text = canvas.data.event.name, 
 	font = "Helvetica 35 bold underline", fill = "#00CED1")
 	canvas.create_text(canvasWidth/2, 100, text = "DATE & TIME",
 	font = "Helvetica 30 bold underline" )
@@ -71,20 +93,21 @@ def goToOverview():
 	if(canvas.data.overviewFlag == True): timeToGo3()
 
 def timeToGo1():
-	canvas.data.eventName = canvas.data.eH_1.get()
-	canvas.data.eventType = canvas.data.eH_2.get()
+	canvas.data.event = Event()
+	canvas.data.event.name = canvas.data.eH_1.get()
+	canvas.data.event.type = canvas.data.eH_2.get()
 	canvas.data.venueFlag = True
 	venueScreen1()
 
 def timeToGo2():
-	canvas.data.eventVenue = canvas.data.eV_1.get()
+	canvas.data.event.venue = canvas.data.eV_1.get()
 	canvas.data.dateTimeFlag = True
 	dateTimeScreen()
 
 def timeToGo3():
-	canvas.data.eventDate = canvas.data.eD_1.get()
-	canvas.data.eventStartTime = canvas.data.eD_2.get()
-	canvas.data.eventEndTime = canvas.data.eD_3.get()
+	canvas.data.event.date = canvas.data.eD_1.get()
+	canvas.data.event.startTime = canvas.data.eD_2.get()
+	canvas.data.event.endTime = canvas.data.eD_3.get()
 	canvas.data.overviewFlag = True
 	summaryScreen()
 
@@ -92,15 +115,15 @@ def summaryScreen():
 	deleteAll()
 	canvasWidth = canvas.data.canvasWidth
 	canvasHeight = canvas.data.canvasHeight
-	venueText = "Venue: " + canvas.data.eventVenue
-	dateText = "Date: " + canvas.data.eventDate
-	if(canvas.data.eventStartTime==""): timeText = "Time: "
-	elif(canvas.data.eventStartTime!="" and canvas.data.eventEndTime==""):
-		timeText = "Time: " + canvas.data.eventStartTime
+	venueText = "Venue: " + canvas.data.event.venue
+	dateText = "Date: " + canvas.data.event.date
+	if(canvas.data.event.startTime==""): timeText = "Time: "
+	elif(canvas.data.event.startTime!="" and canvas.data.event.endTime==""):
+		timeText = "Time: " + canvas.data.event.startTime
 	else:
-		timeText = "Time: " + canvas.data.eventStartTime + " to " + canvas.data.eventEndTime
+		timeText = "Time: " + canvas.data.event.startTime + " to " + canvas.data.event.endTime
 	canvas.create_rectangle(3, 3, canvasWidth, canvasHeight, fill = "#fef6e4")
-	canvas.create_text(canvasWidth/2,30, text = canvas.data.eventName, 
+	canvas.create_text(canvasWidth/2,30, text = canvas.data.event.name, 
 	font = "Helvetica 35 bold underline", fill = "#00CED1")
 	canvas.create_text(canvasWidth/2, 100, text = "OVERVIEW",
 	font = "Helvetica 30 bold underline")
@@ -120,7 +143,7 @@ def venueScreen1():
 	canvasWidth = canvas.data.canvasWidth
 	canvasHeight = canvas.data.canvasHeight
 	canvas.create_rectangle(3, 3, canvasWidth, canvasHeight, fill = "#fef6e4")
-	canvas.create_text(canvasWidth/2,30, text = canvas.data.eventName, 
+	canvas.create_text(canvasWidth/2,30, text = canvas.data.event.name, 
 	font = "Helvetica 35 bold underline", fill = "#00CED1")
 	canvas.create_text(canvasWidth/2, 100, text = "VENUE",
 	font = "Helvetica 30 bold underline" )
