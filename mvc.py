@@ -25,12 +25,42 @@ class Venue(object):
 		self.website = website
 		self.icon = icon
 
+def mousePressed(event):
+	if(canvas.data.venueSearchFlag==True and event.y>=170-canvas.data.scroll):
+		canvas.data.mousePressed = True
+		canvas.data.y = 170-canvas.data.scroll+event.y/30
+		try: 
+			#if(canvas.data.keyIndex>=0):
+			canvas.data.keyIndex = (event.y-170+canvas.data.scroll)/30
+			canvas.data.key =  canvas.data.allVenues[canvas.data.keyIndex]["Name"]
+		except: return
+		venueSearchScreen()
+
+def keyPressed(event):
+	if(canvas.data.venueSearchFlag):
+		if(event.keysym == "Up"):scrollUp()
+		if(event.keysym == "Down"): scrollDown()
+
+def scrollUp():
+	if(canvas.data.venueSearchFlag and canvas.data.scroll >= 0):
+		canvas.data.scroll-=10
+		venueSearchScreen()
+
+def scrollDown():
+	if(canvas.data.venueSearchFlag):
+		canvas.data.scroll+=10
+		venueSearchScreen()
 
 def init():
 	splashScreen()
+	canvas.data.keyIndex = -1
+	canvas.data.mousePressed = False
 	canvas.data.venueFlag = False
+	canvas.data.scroll = 0
+	canvas.data.down = 0
 	canvas.data.dateTimeFlag = False
 	canvas.data.overviewFlag = False
+	canvas.data.venueSearchFlag = False
 	canvas.data.homeIcon= PhotoImage(file="HomeIcon.gif")
 	canvas.data.eH_1 = Entry(canvas.data.root, width = 30)
 	canvas.data.eH_2 = Entry(canvas.data.root, width = 30)
@@ -54,13 +84,13 @@ def init():
 	command = goToDateTime)
 	canvas.data.bT_3 = Button(canvas.data.root, text = "Overview",
 	command = goToOverview)
-	canvas.data.sR_1 = Scrollbar(canvas.data.root)
 	canvas.data.allWidgets = [canvas.data.eH_1, canvas.data.eH_2,
 	canvas.data.bH_1, canvas.data.eV_1, canvas.data.eV_2, canvas.data.bV_1,
 	canvas.data.bV_2, canvas.data.eD_1, canvas.data.eD_2, canvas.data.eD_3,
-	canvas.data.bD_1, canvas.data.sR_1]
+	canvas.data.bD_1]
 
 def venueSearch():
+	canvas.data.scroll = 0
 	canvas.data.allVenues = dict()
 	options.term = canvas.data.event.getTerm()
 	options.location = canvas.data.eV_2.get()
@@ -69,46 +99,125 @@ def venueSearch():
 	response = request(options.host, '/v2/search', url_params, 
 	options.consumer_key, options.consumer_secret, options.token, 
 	options.token_secret)
-	try:
-		for el in response["businesses"]:
-			canvas.data.allVenues[el["name"]] = dict()
-			if(el.get("display_phone")): 
-				canvas.data.allVenues[el["name"]]["phone"] = el["display_phone"]
-			if(el.get("rating")): 
-				canvas.data.allVenues[el["name"]]["rating"] = el["rating"]
-			if(el.get("url")): 
-				canvas.data.allVenues[el["name"]]["website"] = el["url"]
-			if(el.get("display_phone")): 
-				canvas.data.allVenues[el["name"]]["phone"] = el["display_phone"]
-			s = ""
-			for i in xrange(len(el["location"]["display_address"])):
-				s += el["location"]["display_address"][i] + ",\n"
-			s = s[0: len(s)-2]
-			canvas.data.allVenues[el["name"]]["address"] = s
+	#try:
+	"""for el in response["businesses"]:
+		canvas.data.allVenues[el["name"]] = dict()
+		if(el.get("display_phone")): 
+			canvas.data.allVenues[el["name"]]["phone"] = el["display_phone"]
+		if(el.get("rating")): 
+			canvas.data.allVenues[el["name"]]["rating"] = el["rating"]
+		if(el.get("url")): 
+			canvas.data.allVenues[el["name"]]["website"] = el["url"]
+		s = ""
+		for i in xrange(len(el["location"]["display_address"])):
+			s += el["location"]["display_address"][i] + ",\n"
+		s = s[0: len(s)-2]
+		canvas.data.allVenues[el["name"]]["address"] = s
 
-		print dumps(canvas.data.allVenues)
-		venueSearchScreen()
-	except KeyError:
-		print"Please put in a zipcode"
-	except Exception as e:
-		print e
+	print dumps(canvas.data.allVenues)"""
+	venueSearchScreen()
+	#except KeyError:
+	#	print"Please put in a zipcode"
+	#except Exception as e:
+		#print e
 
 def venueSearchScreen():
 	deleteAll()
+	canvas.data.venueSearchFlag = True
 	canvasWidth = canvas.data.canvasWidth
 	canvasHeight = canvas.data.canvasHeight
 	canvas.create_rectangle(3, 3, canvasWidth, canvasHeight, fill = "#fef6e4")
-	canvas.create_text(canvasWidth/2,30, text = canvas.data.event.name, 
-	font = "Helvetica 35 bold underline", fill = "#00CED1")
-	canvas.create_text(canvasWidth/2,80, text = "RESULTS", 
+	canvas.create_text(canvasWidth/2,30-canvas.data.scroll,
+	text = canvas.data.event.name, font = "Helvetica 35 bold underline",
+	fill = "#00CED1")
+	canvas.create_text(canvasWidth/2,80-canvas.data.scroll, text = "RESULTS", 
 	font = "Helvetica 30 bold underline")
-	canvas.create_text(170,150, 
+	canvas.create_text(170,150-canvas.data.scroll, 
 	text = "Choose a venue or click Venue to go back", 
 	font = "Helvetica 15 bold")
-	canvas.data.sR_1.place(side = RIGHT, fill = Y)
+	space = 0
+	canvas.data.allVenues = [
+			 {"Name": "David Guetta",
+							"Album": "Nothing But the Beat",
+							"Num Tracks": "32"
+							},
+			{"Name": "Michael Jackson",
+							"Album": "Bad",
+							"Num Tracks": "10"
+							},
+			{"Name": "Skrillex",
+							"Album": "Scary Monsters and nice Spirits",
+							"Num Tracks": "9"
+							},
+			{"Name": "Sum 41",
+							"Album": "Chuck",
+							"Num Tracks": "13"
+							},
+			{"Name": "Seal",
+							"Album": "Soul",
+							"Num Tracks": "12"
+							},
+			{"Name": "Justin Timberlake",
+							"Album": "What Goes Around... Comes Around",
+							"Num Tracks": "5"
+							},
+			{"Name": "Red Hot Chilli Peppers",
+							"Album": "Stadium Arcadium",
+							"Num Tracks": "28"
+							},
+			{"Name": "Bruno Mars",
+							"Album": "Doo-Wops and Hooligans",
+							"Num Tracks": "10"
+							},
+			{  "Name": "Jason Mraz",
+							"Album": "We Sing. We Dance. We Steal Things.",
+							"Num Tracks": "12"
+							}
+			]
+	for values in canvas.data.allVenues:
+		if(canvas.data.mousePressed==False):
+			print ""
+			canvas.create_rectangle(3, 170+space*30-canvas.data.scroll, 
+			580, 170+(space+1)*30-canvas.data.scroll)
+			canvas.create_text(5, 170+(2*space+1)*15-canvas.data.scroll, 
+			text = values["Name"], anchor = NW)
+			space+=1
+		else: 
+			venueSearchScreen2()
+
+def venueSearchScreen2():
+	space = 0
+	for i in xrange(len(canvas.data.allVenues)):
+		if(i<canvas.data.keyIndex):
+				canvas.create_rectangle(3, 170+space*30-canvas.data.scroll,
+				580, 170+(space+1)*30-canvas.data.scroll)
+				canvas.create_text(5, 170+(2*space+1)*15-canvas.data.scroll,
+				text = canvas.data.allVenues[i]["Name"], anchor = NW)
+				space+=1
+		elif(i == canvas.data.keyIndex):
+			canvas.create_rectangle(3, 170+space*30-canvas.data.scroll,
+			580, 170+(space+3)*30-canvas.data.scroll)
+			canvas.create_text(5, 170+(2*space+1)*15-canvas.data.scroll,
+			text = canvas.data.allVenues[i]["Name"], anchor = NW)
+			canvas.create_text(5, 170+(2*space+1)*15+20-canvas.data.scroll,
+			text = canvas.data.allVenues[i]["Album"], anchor = NW)
+			canvas.create_text(5, 170+(2*space+1)*15+40-canvas.data.scroll,
+			text = canvas.data.allVenues[i]["Num Tracks"], anchor = NW)
+			space+=1
+		else:
+			canvas.create_rectangle(3, 170+(space+2)*30-canvas.data.scroll,
+			580, 170+(space+3)*30-canvas.data.scroll)
+			canvas.create_text(5, 170+(2*space+5)*15-canvas.data.scroll,
+			text = canvas.data.allVenues[i]["Name"], anchor = NW)
+			space+=1
+
+
+
 
 def dateTimeScreen():
 	deleteAll()
+	canvas.data.venueSearchFlag = False
+	canvas.data.mousePressed = False
 	canvasWidth = canvas.data.canvasWidth
 	canvasHeight = canvas.data.canvasHeight
 	canvas.create_rectangle(3, 3, canvasWidth, canvasHeight, fill = "#fef6e4")
@@ -165,6 +274,8 @@ def timeToGo3():
 
 def summaryScreen():
 	deleteAll()
+	canvas.data.venueSearchFlag = False
+	canvas.data.mousePressed = False
 	canvasWidth = canvas.data.canvasWidth
 	canvasHeight = canvas.data.canvasHeight
 	venueText = "Venue: " + canvas.data.venue.name
@@ -192,6 +303,8 @@ def summaryScreen():
 
 def venueScreen1():
 	deleteAll()
+	canvas.data.venueSearchFlag = False
+	canvas.data.mousePressed = False
 	canvasWidth = canvas.data.canvasWidth
 	canvasHeight = canvas.data.canvasHeight
 	canvas.create_rectangle(3, 3, canvasWidth, canvasHeight, fill = "#fef6e4")
@@ -251,6 +364,7 @@ def run():
 	canvasWidth = 600
 	canvasHeight = 600
 	root.title("Eventifier")
+	sR_1 = Scrollbar(root)
 	canvas = Canvas(root, width = canvasWidth, height = canvasHeight)
 	canvas.pack()
 	root.resizable(width=0, height=0)
@@ -261,6 +375,8 @@ def run():
 	canvas.data.canvasHeight = canvasHeight
 	canvas.data.root = root
 	init()
+	root.bind("<Button-1>", mousePressed)
+	root.bind("<Key>", keyPressed)
 	delay = 1500
 	canvas.after(delay, homeScreen)
 	root.mainloop()
