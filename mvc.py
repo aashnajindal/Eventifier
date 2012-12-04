@@ -23,17 +23,23 @@ class Venue(object):
 		self.rating = rating
 		self.phone = phone
 		self.website = website
-		self.icon = icon
 
 def mousePressed(event):
 	if(canvas.data.venueSearchFlag==True and event.y>=170-canvas.data.scroll):
 		canvas.data.mousePressed = True
-		canvas.data.y = 170-canvas.data.scroll+event.y/30
-		try: 
-			#if(canvas.data.keyIndex>=0):
+		if(canvas.data.keyIndex>=0):
+			if(((event.y-170+canvas.data.scroll)/30)>canvas.data.prevKeyIndex):
+				canvas.data.keyIndex = (event.y-170-60+canvas.data.scroll)/30
+				canvas.data.key =  canvas.data.allVenues[canvas.data.keyIndex]["Name"]
+				canvas.data.prevKeyIndex = canvas.data.keyIndex
+			else:
+				canvas.data.keyIndex = (event.y-170+canvas.data.scroll)/30
+				canvas.data.key = canvas.data.allVenues[canvas.data.keyIndex]["Name"]
+				canvas.data.prevKeyIndex = canvas.data.keyIndex
+		else:
 			canvas.data.keyIndex = (event.y-170+canvas.data.scroll)/30
-			canvas.data.key =  canvas.data.allVenues[canvas.data.keyIndex]["Name"]
-		except: return
+			canvas.data.key = canvas.data.allVenues[canvas.data.keyIndex]["Name"]
+			canvas.data.prevKeyIndex = canvas.data.keyIndex
 		venueSearchScreen()
 
 def keyPressed(event):
@@ -42,7 +48,7 @@ def keyPressed(event):
 		if(event.keysym == "Down"): scrollDown()
 
 def scrollUp():
-	if(canvas.data.venueSearchFlag and canvas.data.scroll >= 0):
+	if(canvas.data.venueSearchFlag and canvas.data.scroll > 0):
 		canvas.data.scroll-=10
 		venueSearchScreen()
 
@@ -53,6 +59,7 @@ def scrollDown():
 
 def init():
 	splashScreen()
+	canvas.data.prevKeyIndex = -1
 	canvas.data.keyIndex = -1
 	canvas.data.mousePressed = False
 	canvas.data.venueFlag = False
@@ -61,7 +68,8 @@ def init():
 	canvas.data.dateTimeFlag = False
 	canvas.data.overviewFlag = False
 	canvas.data.venueSearchFlag = False
-	canvas.data.homeIcon= PhotoImage(file="HomeIcon.gif")
+	canvas.data.homeIcon = PhotoImage(file = "HomeIcon.gif")
+	canvas.data.arrowIcon = PhotoImage(file = "arrowIcon.gif")
 	canvas.data.eH_1 = Entry(canvas.data.root, width = 30)
 	canvas.data.eH_2 = Entry(canvas.data.root, width = 30)
 	canvas.data.bH_1 = Button(canvas.data.root,text = "Go",command=timeToGo1)
@@ -84,14 +92,62 @@ def init():
 	command = goToDateTime)
 	canvas.data.bT_3 = Button(canvas.data.root, text = "Overview",
 	command = goToOverview)
+	canvas.data.bR_1 = Button(canvas.data.root, image = canvas.data.arrowIcon,
+	command = arrowClicked)
+	canvas.data.bR_2 = Button(canvas.data.root, text = "Sort by rating",
+	command = sortByRating)
+	canvas.data.bR_3 = Button(canvas.data.root, text = "Sort alphabetically",
+	command = sortAlphabetically)
 	canvas.data.allWidgets = [canvas.data.eH_1, canvas.data.eH_2,
 	canvas.data.bH_1, canvas.data.eV_1, canvas.data.eV_2, canvas.data.bV_1,
 	canvas.data.bV_2, canvas.data.eD_1, canvas.data.eD_2, canvas.data.eD_3,
-	canvas.data.bD_1]
+	canvas.data.bD_1, canvas.data.bR_1, canvas.data.bR_2, canvas.data.bR_3]
+
+def sortByRating():
+	canvas.data.allVenues = mergeSort(canvas.data.allVenues, "Rating")
+	canvas.data.allVenues.reverse()
+	venueSearchScreen()
+
+def sortAlphabetically():
+	canvas.data.allVenues = mergeSort(canvas.data.allVenues, "Name")
+	venueSearchScreen()
+
+# Sorts a list of dictionary by key
+def merge(l1, l2, key):
+	result = list()
+	merged = list()
+	if(len(l1) == 0): return l2
+	elif(len(l2) == 0): return l1
+
+	if (l1[0][key] < l2[0][key]):
+		result.append(l1[0])
+		merged = merge(l1[1:], l2, key)
+	else:
+		result.append(l2[0])
+		merged = merge(l1, l2[1:], key)
+	for el in merged: result.append(el)
+	return result
+
+def mergeSort(l, key):
+	if(len(l) < 2): return l
+	l1 = l[:len(l)/2]
+	l2 = l[len(l)/2:]
+	return merge(mergeSort(l1, key), mergeSort(l2, key), key)
+
+def arrowClicked():
+	canvas.data.venue = Venue()
+	keyIndex = canvas.data.keyIndex
+	canvas.data.venue.name = canvas.data.key
+	canvas.data.venue.address = canvas.data.allVenues[keyIndex]["Address"]
+	canvas.data.venue.rating = canvas.data.allVenues[keyIndex]["Rating"]
+	canvas.data.venue.phone = canvas.data.allVenues[keyIndex]["Phone"]
+	canvas.data.venue.website = canvas.data.allVenues[keyIndex]["Website"]
+	dateTimeScreen()
 
 def venueSearch():
+	canvas.data.prevKeyIndex = -1
 	canvas.data.scroll = 0
-	canvas.data.allVenues = dict()
+	canvas.data.allVenues = list()
 	options.term = canvas.data.event.getTerm()
 	options.location = canvas.data.eV_2.get()
 	url_params['term'] = options.term
@@ -99,120 +155,86 @@ def venueSearch():
 	response = request(options.host, '/v2/search', url_params, 
 	options.consumer_key, options.consumer_secret, options.token, 
 	options.token_secret)
-	#try:
-	"""for el in response["businesses"]:
-		canvas.data.allVenues[el["name"]] = dict()
-		if(el.get("display_phone")): 
-			canvas.data.allVenues[el["name"]]["phone"] = el["display_phone"]
-		if(el.get("rating")): 
-			canvas.data.allVenues[el["name"]]["rating"] = el["rating"]
-		if(el.get("url")): 
-			canvas.data.allVenues[el["name"]]["website"] = el["url"]
-		s = ""
-		for i in xrange(len(el["location"]["display_address"])):
-			s += el["location"]["display_address"][i] + ",\n"
-		s = s[0: len(s)-2]
-		canvas.data.allVenues[el["name"]]["address"] = s
+	try:
+		for el in response["businesses"]:
+			temp = dict()
+			temp["Name"] = el["name"]
+			if(el.get("display_phone")): 
+				temp["Phone"] = el["display_phone"]
+			if(el.get("rating")): 
+				temp["Rating"] = el["rating"]
+			if(el.get("url")): 
+				temp["Website"] = el["url"]
+			s = ""
+			for i in xrange(len(el["location"]["display_address"])):
+				s += el["location"]["display_address"][i] + ",\n"
+			s = s[0: len(s)-2]
+			temp["Address"] = s
+			canvas.data.allVenues.append(temp)
 
-	print dumps(canvas.data.allVenues)"""
-	venueSearchScreen()
-	#except KeyError:
-	#	print"Please put in a zipcode"
-	#except Exception as e:
-		#print e
+		print dumps(canvas.data.allVenues)
+		venueSearchScreen()
+	except KeyError:
+		print"Please enter a valid location"
+	except Exception as e:
+		print e
 
 def venueSearchScreen():
 	deleteAll()
 	canvas.data.venueSearchFlag = True
 	canvasWidth = canvas.data.canvasWidth
 	canvasHeight = canvas.data.canvasHeight
+	canvas.data.bR_2.place(x = 30, y = 140-canvas.data.scroll)
+	canvas.data.bR_3.place(x = 150, y = 140-canvas.data.scroll)
 	canvas.create_rectangle(3, 3, canvasWidth, canvasHeight, fill = "#fef6e4")
 	canvas.create_text(canvasWidth/2,30-canvas.data.scroll,
 	text = canvas.data.event.name, font = "Helvetica 35 bold underline",
 	fill = "#00CED1")
 	canvas.create_text(canvasWidth/2,80-canvas.data.scroll, text = "RESULTS", 
 	font = "Helvetica 30 bold underline")
-	canvas.create_text(170,150-canvas.data.scroll, 
+	canvas.create_text(170,130-canvas.data.scroll, 
 	text = "Choose a venue or click Venue to go back", 
 	font = "Helvetica 15 bold")
 	space = 0
-	canvas.data.allVenues = [
-			 {"Name": "David Guetta",
-							"Album": "Nothing But the Beat",
-							"Num Tracks": "32"
-							},
-			{"Name": "Michael Jackson",
-							"Album": "Bad",
-							"Num Tracks": "10"
-							},
-			{"Name": "Skrillex",
-							"Album": "Scary Monsters and nice Spirits",
-							"Num Tracks": "9"
-							},
-			{"Name": "Sum 41",
-							"Album": "Chuck",
-							"Num Tracks": "13"
-							},
-			{"Name": "Seal",
-							"Album": "Soul",
-							"Num Tracks": "12"
-							},
-			{"Name": "Justin Timberlake",
-							"Album": "What Goes Around... Comes Around",
-							"Num Tracks": "5"
-							},
-			{"Name": "Red Hot Chilli Peppers",
-							"Album": "Stadium Arcadium",
-							"Num Tracks": "28"
-							},
-			{"Name": "Bruno Mars",
-							"Album": "Doo-Wops and Hooligans",
-							"Num Tracks": "10"
-							},
-			{  "Name": "Jason Mraz",
-							"Album": "We Sing. We Dance. We Steal Things.",
-							"Num Tracks": "12"
-							}
-			]
-	for values in canvas.data.allVenues:
+	for i in xrange(len(canvas.data.allVenues)):
 		if(canvas.data.mousePressed==False):
-			print ""
 			canvas.create_rectangle(3, 170+space*30-canvas.data.scroll, 
 			580, 170+(space+1)*30-canvas.data.scroll)
 			canvas.create_text(5, 170+(2*space+1)*15-canvas.data.scroll, 
-			text = values["Name"], anchor = NW)
+			text = canvas.data.allVenues[i]["Name"], anchor = NW)
 			space+=1
 		else: 
-			venueSearchScreen2()
-
-def venueSearchScreen2():
-	space = 0
-	for i in xrange(len(canvas.data.allVenues)):
-		if(i<canvas.data.keyIndex):
+			if(i<canvas.data.keyIndex):
 				canvas.create_rectangle(3, 170+space*30-canvas.data.scroll,
 				580, 170+(space+1)*30-canvas.data.scroll)
 				canvas.create_text(5, 170+(2*space+1)*15-canvas.data.scroll,
 				text = canvas.data.allVenues[i]["Name"], anchor = NW)
 				space+=1
-		elif(i == canvas.data.keyIndex):
-			canvas.create_rectangle(3, 170+space*30-canvas.data.scroll,
-			580, 170+(space+3)*30-canvas.data.scroll)
-			canvas.create_text(5, 170+(2*space+1)*15-canvas.data.scroll,
-			text = canvas.data.allVenues[i]["Name"], anchor = NW)
-			canvas.create_text(5, 170+(2*space+1)*15+20-canvas.data.scroll,
-			text = canvas.data.allVenues[i]["Album"], anchor = NW)
-			canvas.create_text(5, 170+(2*space+1)*15+40-canvas.data.scroll,
-			text = canvas.data.allVenues[i]["Num Tracks"], anchor = NW)
-			space+=1
-		else:
-			canvas.create_rectangle(3, 170+(space+2)*30-canvas.data.scroll,
-			580, 170+(space+3)*30-canvas.data.scroll)
-			canvas.create_text(5, 170+(2*space+5)*15-canvas.data.scroll,
-			text = canvas.data.allVenues[i]["Name"], anchor = NW)
-			space+=1
-
-
-
+			elif(i == canvas.data.keyIndex):
+				ratingText = "Rating: " + str(canvas.data.allVenues[i]["Rating"])
+				website = canvas.data.allVenues[i]["Website"]
+				websiteText = website[0:len(website)/2]+"\n" +website[len(website)/2:]
+				canvas.create_rectangle(3, 170+space*30-canvas.data.scroll,
+				580, 170+(space+3)*30-canvas.data.scroll)
+				canvas.create_text(5, 170+(2*space+1)*15-canvas.data.scroll,
+				text = canvas.data.allVenues[i]["Name"], anchor = NW)
+				canvas.create_text(5, 170+(2*space+1)*15+20-canvas.data.scroll,
+				text = canvas.data.allVenues[i]["Address"], anchor = NW)
+				canvas.create_text(200, 170+(2*space+1)*15+20-canvas.data.scroll,
+				text = ratingText, anchor = NW)
+				canvas.create_text(200, 170+(2*space+1)*15-canvas.data.scroll,
+				text = canvas.data.allVenues[i]["Phone"], anchor = NW)
+				canvas.create_text(200, 170+(2*space+1)*15+40-canvas.data.scroll,
+				text = websiteText, anchor = NW)
+				canvas.data.bR_1.place(x = 500, y = 170+(2*space+1)*15-10-canvas.data.scroll)
+				space+=1
+			else:
+				canvas.create_rectangle(3, 170+(space+2)*30-canvas.data.scroll,
+				580, 170+(space+3)*30-canvas.data.scroll)
+				canvas.create_text(5, 170+(2*space+5)*15-canvas.data.scroll,
+				text = canvas.data.allVenues[i]["Name"], anchor = NW)
+				space+=1
+				
 
 def dateTimeScreen():
 	deleteAll()
@@ -250,6 +272,7 @@ def goToDateTime():
 def goToOverview():
 	if(canvas.data.dateTimeFlag == True): timeToGo3()
 	if(canvas.data.overviewFlag == True): timeToGo3()
+	else: print "Please visit all previous tabs first"
 
 def timeToGo1():
 	canvas.data.event = Event()
@@ -278,7 +301,7 @@ def summaryScreen():
 	canvas.data.mousePressed = False
 	canvasWidth = canvas.data.canvasWidth
 	canvasHeight = canvas.data.canvasHeight
-	venueText = "Venue: " + canvas.data.venue.name
+	venueText = "Venue:  " + canvas.data.venue.name
 	dateText = "Date: " + canvas.data.event.date
 	if(canvas.data.event.startTime==""): timeText = "Time: "
 	elif(canvas.data.event.startTime!="" and canvas.data.event.endTime==""):
@@ -292,10 +315,14 @@ def summaryScreen():
 	font = "Helvetica 30 bold underline")
 	canvas.create_text(50, 200, text = venueText, 
 	font = "Helvetica 20 bold", anchor = NW)
-	canvas.create_text(50, 300, text = dateText, 
+	canvas.create_text(50, 340, text = dateText, 
 	font = "Helvetica 20 bold", anchor = NW)
 	canvas.create_text(50, 400, text = timeText, 
 	font = "Helvetica 20 bold", anchor = NW)
+	canvas.create_text(130, 230, text = canvas.data.venue.address, 
+	font = "Helvetica 15 bold italic", anchor = NW)
+	canvas.create_text(130, 290, text = canvas.data.venue.phone, 
+	font = "Helvetica 15 bold italic", anchor = NW)
 	canvas.data.bT_1.place(x = 10, y = 550)
 	canvas.data.bT_2.place(x = 80, y = 550)
 	canvas.data.bT_3.place(x = 180, y = 550)
@@ -317,7 +344,7 @@ def venueScreen1():
 	canvas.create_text(canvasWidth/2, 320, text = "OR", 
 	font = "Helvetica 25 bold" )
 	canvas.create_text(canvasWidth/2, 400, 
-	text = "Please enter city or zipcode", font = "Helvetica 15 bold")
+	text = "Please enter a location or zipcode", font = "Helvetica 15 bold")
 	canvas.data.eV_1.place(x = 170, y = 220)
 	canvas.data.eV_2.place(x = 170, y = 420)
 	canvas.data.bV_1.place(x = 375, y = 250)
@@ -325,6 +352,7 @@ def venueScreen1():
 	canvas.data.bT_1.place(x = 10, y = 550)
 	canvas.data.bT_2.place(x = 80, y = 550)
 	canvas.data.bT_3.place(x = 180, y = 550)
+	canvas.data.eV_2.delete(0, len(canvas.data.eV_2.get()))
 
 def deleteAll():
 	canvas.delete(ALL)
@@ -364,7 +392,6 @@ def run():
 	canvasWidth = 600
 	canvasHeight = 600
 	root.title("Eventifier")
-	sR_1 = Scrollbar(root)
 	canvas = Canvas(root, width = canvasWidth, height = canvasHeight)
 	canvas.pack()
 	root.resizable(width=0, height=0)
