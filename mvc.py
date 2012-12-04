@@ -28,19 +28,26 @@ def mousePressed(event):
 	if(canvas.data.venueSearchFlag==True and event.y>=170-canvas.data.scroll):
 		canvas.data.mousePressed = True
 		if(canvas.data.keyIndex>=0):
-			if(((event.y-170+canvas.data.scroll)/30)>canvas.data.prevKeyIndex):
+			if(event.x>495 and event.x<560 
+			and event.y>canvas.data.prevKeyIndex*30+180-canvas.data.scroll
+			and event.y<(canvas.data.prevKeyIndex)*30+250-canvas.data.scroll): 
+				arrowClicked()
+			if(((event.y-170+canvas.data.scroll))>=30*canvas.data.prevKeyIndex
+			and not canvas.data.arrowClicked):
 				canvas.data.keyIndex = (event.y-170-60+canvas.data.scroll)/30
 				canvas.data.key =  canvas.data.allVenues[canvas.data.keyIndex]["Name"]
 				canvas.data.prevKeyIndex = canvas.data.keyIndex
-			else:
+				venueSearchScreen()
+			elif(not canvas.data.arrowClicked):
 				canvas.data.keyIndex = (event.y-170+canvas.data.scroll)/30
 				canvas.data.key = canvas.data.allVenues[canvas.data.keyIndex]["Name"]
 				canvas.data.prevKeyIndex = canvas.data.keyIndex
-		else:
+				venueSearchScreen()
+		elif(not canvas.data.arrowClicked):
 			canvas.data.keyIndex = (event.y-170+canvas.data.scroll)/30
 			canvas.data.key = canvas.data.allVenues[canvas.data.keyIndex]["Name"]
 			canvas.data.prevKeyIndex = canvas.data.keyIndex
-		venueSearchScreen()
+			venueSearchScreen()
 
 def keyPressed(event):
 	if(canvas.data.venueSearchFlag):
@@ -60,6 +67,7 @@ def scrollDown():
 def init():
 	splashScreen()
 	canvas.data.prevKeyIndex = -1
+	canvas.data.arrowClicked = False
 	canvas.data.keyIndex = -1
 	canvas.data.mousePressed = False
 	canvas.data.venueFlag = False
@@ -92,8 +100,6 @@ def init():
 	command = goToDateTime)
 	canvas.data.bT_3 = Button(canvas.data.root, text = "Overview",
 	command = goToOverview)
-	canvas.data.bR_1 = Button(canvas.data.root, image = canvas.data.arrowIcon,
-	command = arrowClicked)
 	canvas.data.bR_2 = Button(canvas.data.root, text = "Sort by rating",
 	command = sortByRating)
 	canvas.data.bR_3 = Button(canvas.data.root, text = "Sort alphabetically",
@@ -101,7 +107,7 @@ def init():
 	canvas.data.allWidgets = [canvas.data.eH_1, canvas.data.eH_2,
 	canvas.data.bH_1, canvas.data.eV_1, canvas.data.eV_2, canvas.data.bV_1,
 	canvas.data.bV_2, canvas.data.eD_1, canvas.data.eD_2, canvas.data.eD_3,
-	canvas.data.bD_1, canvas.data.bR_1, canvas.data.bR_2, canvas.data.bR_3]
+	canvas.data.bD_1, canvas.data.bR_2, canvas.data.bR_3]
 
 def sortByRating():
 	canvas.data.allVenues = mergeSort(canvas.data.allVenues, "Rating")
@@ -135,6 +141,7 @@ def mergeSort(l, key):
 	return merge(mergeSort(l1, key), mergeSort(l2, key), key)
 
 def arrowClicked():
+	canvas.data.arrowClicked = True
 	canvas.data.venue = Venue()
 	keyIndex = canvas.data.keyIndex
 	canvas.data.venue.name = canvas.data.key
@@ -145,6 +152,7 @@ def arrowClicked():
 	dateTimeScreen()
 
 def venueSearch():
+	canvas.data.arrowClicked = False
 	canvas.data.prevKeyIndex = -1
 	canvas.data.scroll = 0
 	canvas.data.allVenues = list()
@@ -226,7 +234,8 @@ def venueSearchScreen():
 				text = canvas.data.allVenues[i]["Phone"], anchor = NW)
 				canvas.create_text(200, 170+(2*space+1)*15+40-canvas.data.scroll,
 				text = websiteText, anchor = NW)
-				canvas.data.bR_1.place(x = 500, y = 170+(2*space+1)*15-10-canvas.data.scroll)
+				canvas.create_image(500,170+(2*space+1)*15-10-canvas.data.scroll, 
+				image = canvas.data.arrowIcon, anchor = NW)
 				space+=1
 			else:
 				canvas.create_rectangle(3, 170+(space+2)*30-canvas.data.scroll,
