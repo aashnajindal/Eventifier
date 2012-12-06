@@ -1,6 +1,7 @@
 from Tkinter import *
 from yelp import *
 from json import dumps
+import smtplib
 
 class Event(object):
 	def __init__(self, name = "", category = "", venue = "", 
@@ -76,6 +77,7 @@ def init():
 	canvas.data.dateTimeFlag = False
 	canvas.data.overviewFlag = False
 	canvas.data.venueSearchFlag = False
+	canvas.data.emailFlag = False
 	canvas.data.homeIcon = PhotoImage(file = "HomeIcon.gif")
 	canvas.data.arrowIcon = PhotoImage(file = "arrowIcon.gif")
 	canvas.data.eH_1 = Entry(canvas.data.root, width = 30)
@@ -104,10 +106,30 @@ def init():
 	command = sortByRating)
 	canvas.data.bR_3 = Button(canvas.data.root, text = "Sort alphabetically",
 	command = sortAlphabetically)
+	canvas.data.bT_4 = Button(canvas.data.root, text = "Send email", 
+	command = goToEmail)
+	canvas.data.bO_1 = Button(canvas.data.root, text = "Go", 
+	command = timeToGo4)
+	canvas.data.eE_1 = Entry(canvas.data.root, width = 40)
+	canvas.data.eE_2 = Entry(canvas.data.root, width = 40)
+	canvas.data.eE_3 = Entry(canvas.data.root, width = 40)
+	canvas.data.eE_4 = Entry(canvas.data.root, width = 40)
+	canvas.data.eE_5 = Entry(canvas.data.root, width = 40)
+	canvas.data.eE_6 = Entry(canvas.data.root, width = 40)
+	canvas.data.eE_7 = Entry(canvas.data.root, width = 40)
+	canvas.data.eE_8 = Entry(canvas.data.root, width = 40)
+	canvas.data.eE_9 = Entry(canvas.data.root, width = 40)
+	canvas.data.eE_10 = Entry(canvas.data.root, width = 40)
+	canvas.data.bE_1 = Button(canvas.data.root, text = "Send", 
+	command = sendEmail)
 	canvas.data.allWidgets = [canvas.data.eH_1, canvas.data.eH_2,
 	canvas.data.bH_1, canvas.data.eV_1, canvas.data.eV_2, canvas.data.bV_1,
 	canvas.data.bV_2, canvas.data.eD_1, canvas.data.eD_2, canvas.data.eD_3,
-	canvas.data.bD_1, canvas.data.bR_2, canvas.data.bR_3]
+	canvas.data.bD_1, canvas.data.bR_2, canvas.data.bR_3, canvas.data.bT_1,
+	canvas.data.bT_2, canvas.data.bT_3, canvas.data.bT_4, canvas.data.bO_1,
+	canvas.data.eE_1, canvas.data.eE_2, canvas.data.eE_3, canvas.data.eE_4, 
+	canvas.data.eE_5, canvas.data.eE_6, canvas.data.eE_7, canvas.data.eE_8,
+	canvas.data.eE_9, canvas.data.eE_10]
 
 def sortByRating():
 	canvas.data.allVenues = mergeSort(canvas.data.allVenues, "Rating")
@@ -142,12 +164,14 @@ def mergeSort(l, key):
 
 def arrowClicked():
 	canvas.data.arrowClicked = True
+	canvas.data.dateTimeFlag = True
 	canvas.data.venue = Venue()
 	keyIndex = canvas.data.keyIndex
 	canvas.data.venue.name = canvas.data.key
 	canvas.data.venue.address = canvas.data.allVenues[keyIndex]["Address"]
 	canvas.data.venue.rating = canvas.data.allVenues[keyIndex]["Rating"]
-	canvas.data.venue.phone = canvas.data.allVenues[keyIndex]["Phone"]
+	if(len(canvas.data.allVenues[keyIndex])>4):
+		canvas.data.venue.phone = canvas.data.allVenues[keyIndex]["Phone"]
 	canvas.data.venue.website = canvas.data.allVenues[keyIndex]["Website"]
 	dateTimeScreen()
 
@@ -179,8 +203,6 @@ def venueSearch():
 			s = s[0: len(s)-2]
 			temp["Address"] = s
 			canvas.data.allVenues.append(temp)
-
-		print dumps(canvas.data.allVenues)
 		venueSearchScreen()
 	except KeyError:
 		print"Please enter a valid location"
@@ -194,6 +216,10 @@ def venueSearchScreen():
 	canvasHeight = canvas.data.canvasHeight
 	canvas.data.bR_2.place(x = 30, y = 140-canvas.data.scroll)
 	canvas.data.bR_3.place(x = 150, y = 140-canvas.data.scroll)
+	canvas.data.bT_1.place(x = 10, y = 550)
+	canvas.data.bT_2.place(x = 80, y = 550)
+	canvas.data.bT_3.place(x = 180, y = 550)
+	canvas.data.bT_4.place(x = 270, y = 550)
 	canvas.create_rectangle(3, 3, canvasWidth, canvasHeight, fill = "#fef6e4")
 	canvas.create_text(canvasWidth/2,30-canvas.data.scroll,
 	text = canvas.data.event.name, font = "Helvetica 35 bold underline",
@@ -221,20 +247,26 @@ def venueSearchScreen():
 			elif(i == canvas.data.keyIndex):
 				ratingText = "Rating: " + str(canvas.data.allVenues[i]["Rating"])
 				website = canvas.data.allVenues[i]["Website"]
-				websiteText = website[0:len(website)/2]+"\n" +website[len(website)/2:]
-				canvas.create_rectangle(3, 170+space*30-canvas.data.scroll,
-				580, 170+(space+3)*30-canvas.data.scroll)
+				websiteText = website[0:len(website)/2]+"\n" + website[len(website)/2:]
+				canvas.create_rectangle(3, 
+				170+space*30-canvas.data.scroll,580, 
+				170+(space+3)*30-canvas.data.scroll)
 				canvas.create_text(5, 170+(2*space+1)*15-canvas.data.scroll,
 				text = canvas.data.allVenues[i]["Name"], anchor = NW)
 				canvas.create_text(5, 170+(2*space+1)*15+20-canvas.data.scroll,
 				text = canvas.data.allVenues[i]["Address"], anchor = NW)
-				canvas.create_text(200, 170+(2*space+1)*15+20-canvas.data.scroll,
+				canvas.create_text(200, 
+				170+(2*space+1)*15+20-canvas.data.scroll,
 				text = ratingText, anchor = NW)
-				canvas.create_text(200, 170+(2*space+1)*15-canvas.data.scroll,
-				text = canvas.data.allVenues[i]["Phone"], anchor = NW)
-				canvas.create_text(200, 170+(2*space+1)*15+40-canvas.data.scroll,
+				if(len(canvas.data.allVenues[i])>4):
+					canvas.create_text(200, 
+					170+(2*space+1)*15-canvas.data.scroll,
+					text = canvas.data.allVenues[i]["Phone"], anchor = NW)
+				canvas.create_text(200, 
+				170+(2*space+1)*15+40-canvas.data.scroll,
 				text = websiteText, anchor = NW)
-				canvas.create_image(500,170+(2*space+1)*15-10-canvas.data.scroll, 
+				canvas.create_image(500,
+				170+(2*space+1)*15-10-canvas.data.scroll, 
 				image = canvas.data.arrowIcon, anchor = NW)
 				space+=1
 			else:
@@ -269,18 +301,16 @@ def dateTimeScreen():
 	canvas.data.bT_1.place(x = 10, y = 550)
 	canvas.data.bT_2.place(x = 80, y = 550)
 	canvas.data.bT_3.place(x = 180, y = 550)
-
+	canvas.data.bT_4.place(x = 270, y = 550)
 
 def goToVenue():
 	if(canvas.data.venueFlag == True): timeToGo1()
 
 def goToDateTime(): 
-	if(canvas.data.venueFlag == True): timeToGo2()
-	if(canvas.data.dateTimeFlag == True): timeToGo2()
+	if(canvas.data.venueFlag or canvas.data.dateTimeFlag): timeToGo2()
 
 def goToOverview():
-	if(canvas.data.dateTimeFlag == True): timeToGo3()
-	if(canvas.data.overviewFlag == True): timeToGo3()
+	if(canvas.data.dateTimeFlag or canvas.data.overviewFlag): timeToGo3()
 	else: print "Please visit all previous tabs first"
 
 def timeToGo1():
@@ -304,19 +334,96 @@ def timeToGo3():
 	canvas.data.overviewFlag = True
 	summaryScreen()
 
+def timeToGo4():
+	canvas.data.emailFlag = True
+	emailScreen()
+
+def goToEmail():
+	if(canvas.data.overviewFlag or canvas.data.emailFlag): timeToGo4()
+	
+def emailScreen():
+	deleteAll()
+	canvas.data.venueSearchFlag = False
+	canvas.data.mousePressed = False
+	canvas.data.bT_1.place(x = 10, y = 550)
+	canvas.data.bT_2.place(x = 80, y = 550)
+	canvas.data.bT_3.place(x = 180, y = 550)
+	canvas.data.bT_4.place(x = 270, y = 550)
+	canvasWidth = canvas.data.canvasWidth
+	canvasHeight = canvas.data.canvasHeight
+	canvas.create_rectangle(3, 3, canvasWidth, canvasHeight, fill = "#fef6e4")
+	canvas.create_text(canvasWidth/2,30, text = canvas.data.event.name, 
+	font = "Helvetica 35 bold underline", fill = "#00CED1")
+	canvas.create_text(canvasWidth/2, 100, text = "EMAIL",
+	font = "Helvetica 30 bold underline")
+	canvas.create_text(190, 150, 
+	text = "Enter the email IDs of the people you want to invite",
+	font = "Helvetica 15 bold")
+	canvas.data.eE_1.place(x = 10, y = 170)
+	canvas.data.eE_2.place(x = 10, y = 210)
+	canvas.data.eE_3.place(x = 10, y = 250)
+	canvas.data.eE_4.place(x = 10, y = 290)
+	canvas.data.eE_5.place(x = 10, y = 330)
+	canvas.data.eE_6.place(x = 10, y = 370)
+	canvas.data.eE_7.place(x = 10, y = 410)
+	canvas.data.eE_8.place(x = 10, y = 450)
+	canvas.data.eE_9.place(x = 10, y = 490)
+	canvas.data.eE_10.place(x = 10, y = 525)
+	canvas.data.bE_1.place(x = 350, y = 525)
+
+
+def sendEmail():
+	canvas.data.receivers = []
+	canvas.data.receivers.append(canvas.data.eE_1.get())
+	canvas.data.receivers.append(canvas.data.eE_2.get())
+	canvas.data.receivers.append(canvas.data.eE_3.get())
+	canvas.data.receivers.append(canvas.data.eE_4.get())
+	canvas.data.receivers.append(canvas.data.eE_5.get())
+	canvas.data.receivers.append(canvas.data.eE_6.get())
+	canvas.data.receivers.append(canvas.data.eE_7.get())
+	canvas.data.receivers.append(canvas.data.eE_8.get())
+	canvas.data.receivers.append(canvas.data.eE_9.get())
+	canvas.data.receivers.append(canvas.data.eE_10.get())
+	sender = 'eventifier.termproject@gmail.com'
+	eventDetails = canvas.data.event.name + "\n" + "Venue:  " 
+	eventDetails += canvas.data.venue.name + "\n" + canvas.data.venue.address
+	eventDetails += "\n" +"Date:  " +canvas.data.event.date + "\n"
+	eventDetails += canvas.data.timeText
+	message = """From: Eventifier <from@fromdomain.com>
+To: <to@todomain.com>
+Subject: Please come to our event
+
+%s
+	""" % (eventDetails)
+
+	try:
+	   smtpObj = smtplib.SMTP_SSL('smtp.gmail.com', 465)
+	   smtpObj.login(sender, "15112_termproject")
+	   #smtpObj.ehlo()
+	   #smtpObj.starttls()
+	   smtpObj.sendmail(sender, canvas.data.receivers, message)
+	except Exception as R:
+	   print R
+
+
 def summaryScreen():
 	deleteAll()
 	canvas.data.venueSearchFlag = False
 	canvas.data.mousePressed = False
+	canvas.data.bT_1.place(x = 10, y = 550)
+	canvas.data.bT_2.place(x = 80, y = 550)
+	canvas.data.bT_3.place(x = 180, y = 550)
+	canvas.data.bT_4.place(x = 270, y = 550)
+	canvas.data.bO_1.place(x = 300, y = 420)
 	canvasWidth = canvas.data.canvasWidth
 	canvasHeight = canvas.data.canvasHeight
 	venueText = "Venue:  " + canvas.data.venue.name
 	dateText = "Date: " + canvas.data.event.date
 	if(canvas.data.event.startTime==""): timeText = "Time: "
 	elif(canvas.data.event.startTime!="" and canvas.data.event.endTime==""):
-		timeText = "Time: " + canvas.data.event.startTime
+		timeText = "Time:  " + canvas.data.event.startTime
 	else:
-		timeText = "Time: " + canvas.data.event.startTime + " to " + canvas.data.event.endTime
+		timeText = "Time:  " + canvas.data.event.startTime + " - " + canvas.data.event.endTime
 	canvas.create_rectangle(3, 3, canvasWidth, canvasHeight, fill = "#fef6e4")
 	canvas.create_text(canvasWidth/2,30, text = canvas.data.event.name, 
 	font = "Helvetica 35 bold underline", fill = "#00CED1")
@@ -332,10 +439,7 @@ def summaryScreen():
 	font = "Helvetica 15 bold italic", anchor = NW)
 	canvas.create_text(130, 290, text = canvas.data.venue.phone, 
 	font = "Helvetica 15 bold italic", anchor = NW)
-	canvas.data.bT_1.place(x = 10, y = 550)
-	canvas.data.bT_2.place(x = 80, y = 550)
-	canvas.data.bT_3.place(x = 180, y = 550)
-
+	canvas.data.timeText = timeText
 
 def venueScreen1():
 	deleteAll()
@@ -361,6 +465,7 @@ def venueScreen1():
 	canvas.data.bT_1.place(x = 10, y = 550)
 	canvas.data.bT_2.place(x = 80, y = 550)
 	canvas.data.bT_3.place(x = 180, y = 550)
+	canvas.data.bT_4.place(x = 270, y = 550)
 	canvas.data.eV_2.delete(0, len(canvas.data.eV_2.get()))
 
 def deleteAll():
@@ -392,8 +497,6 @@ def homeScreen():
 	text = "What event do you want to plan?", font = "Helvetica 24 bold")
 	canvas.create_text(canvasWidth/2, 50, fill = "black", 
 	text = "HOME", font = "Helvetica 36 bold underline")
-	canvas.data.eH_1.insert(0, "Plan A")
-	canvas.data.eH_2.insert(0, "Birthday Party")
 
 def run():
 	global canvas

@@ -79,7 +79,6 @@ def request(host, path, url_params, consumer_key, consumer_secret, token, token_
   if url_params:
     encoded_params = urllib.urlencode(url_params)
   url = 'http://%s%s?%s' % (host, path, encoded_params)
-  print url_params, options.location, options.term
   print 'URL: %s' % (url,)
 
   # Sign the URL
@@ -106,10 +105,4 @@ def request(host, path, url_params, consumer_key, consumer_secret, token, token_
     response = json.loads(error.read())
 
   return response
-
-#response = request(options.host, '/v2/search', url_params, options.consumer_key, options.consumer_secret, options.token, options.token_secret)
-#print json.dumps(response, sort_keys=True, indent=2)
-#for el in response['businesses']:
-#  print "%s %s" % (el['name'], el['location']['postal_code'])
-  #print el['name']
 
