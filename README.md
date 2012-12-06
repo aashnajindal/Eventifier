@@ -23,3 +23,4 @@ Run Eventifier by executing this command:
 ## Video Tutorial ##
 
 To get you started off with Eventifier, have a look at a <a href="http://www.youtube.com/watch?v=ycYo26ceWok">3 minute tutorial</a> that gives you an overview of how Eventifier can make event-planning so much easier and faster for you.
+
