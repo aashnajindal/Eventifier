@@ -26,3 +26,4 @@ To get you started off with Eventifier, have a look at a <a href="http://www.you
 
 ## About ##
 
+Eventifier is an event manager, which will take you step by step through all the aspects you need to go through when planning an event. If you don’t have a venue in mind it will search for venues for you based on the location and type of event that you provide it. In the end you can send an email to all your friends and colleagues inviting them to your event. 
